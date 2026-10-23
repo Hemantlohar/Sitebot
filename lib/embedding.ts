@@ -1,56 +1,24 @@
 import "server-only";
 
-import {
-  createEmbedding,
-} from "./ai/embedding";
+import { createEmbedding, createBatchEmbeddings } from "./ai/embedding";
 
-export async function generateEmbedding(
-  text: string
-) {
-  try {
-    return await createEmbedding(text);
-  } catch (error) {
-    console.error(
-      "EMBEDDING ERROR:",
-      error
-    );
-
-    return [];
-  }
+/**
+ * Generates a 768-dimensional vector embedding for a given text chunk using Gemini.
+ * Propagates errors to the caller so ingestion failures are not silently masked.
+ */
+export async function generateEmbedding(text: string): Promise<number[]> {
+  return await createEmbedding(text);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import ollama from "ollama";
-
-// export async function generateEmbedding(text: string) {
-//   try {
-//     const response = await ollama.embeddings({
-//       model: "nomic-embed-text",
-//       prompt: text.slice(0,4000),
-//     });
-
-//     return response.embedding;
-//   } catch (error) {
-//     console.error("Embedding Error:", error);
-
-//     return [];
-//   }
-// }
+/**
+ * Generates embeddings for multiple text chunks with controlled concurrency.
+ */
+export async function generateBatchEmbeddings(
+  texts: string[],
+  options?: {
+    concurrency?: number;
+    onProgress?: (completed: number, total: number) => void;
+  }
+): Promise<number[][]> {
+  return await createBatchEmbeddings(texts, options);
+}

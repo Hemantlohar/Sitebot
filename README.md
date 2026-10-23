@@ -10,8 +10,7 @@ AI Chatbot SaaS built with Next.js 16, Google Gemini API, Supabase pgvector, and
 - **Authentication**: [Supabase Auth](https://supabase.com/auth) via `@supabase/ssr`.
 - **Database & Vector Search**: Supabase PostgreSQL with [pgvector](https://github.com/pgvector/pgvector) extension.
 - **Edge Routing & Route Protection**: Next.js Proxy convention (`proxy.ts`).
-- **Rate Limiting & Cost Protection**: [Upstash Redis](https://upstash.com) with sliding window limits and in-memory fallback for local development.
-- **AI & Embeddings**: Transitioning to official [Google Gemini API](https://aistudio.google.com/) (`@google/genai`) and `text-embedding-004` (768 dimensions).
+- **AI & Embeddings**: Powered by official [Google Gemini API](https://aistudio.google.com/) (`@google/genai`), using `gemini-3.8-flash` for streaming chat and business analysis, and `gemini-embedding-2` scaled to 768 dimensions for vector retrieval.
 
 ---
 
@@ -105,9 +104,26 @@ npm run build
 
 ---
 
-## Current Known Limitations & Phase 2 Roadmap
+## Gemini AI & RAG Architecture (Phase 2)
 
-- **AI Pipeline**: Embeddings and chat currently use legacy Ollama/Groq providers; full migration to the official Google Gemini SDK (`@google/genai`) and `text-embedding-004` is scheduled for **Phase 2**.
-- **Crawler**: Currently performs single-page deep text extraction. Multi-page recursive link crawling, sitemap processing, and queue orchestration are planned for **Phase 3**.
-- **Widget CSS Isolation**: The embeddable widget injects DOM nodes into the host page; Shadow DOM encapsulation is scheduled for **Phase 4**.
->>>>>>> 37738c5 (Initial commit: Next.js foundation, Supabase schema, and security layer)
+1. **Official Google GenAI SDK (`@google/genai`)**:
+   - `gemini-3.8-flash` for streaming visitor chat and structured JSON website business analysis.
+   - `gemini-embedding-2` scaled natively to 768 dimensions via MRL (`outputDimensionality: 768`).
+2. **Server-Side Resilience**:
+   - Centralized model configuration in `lib/ai/models.ts`.
+   - Bounded exponential backoff retries with jitter for rate limits (HTTP 429) and transient network errors (503).
+   - Strict vector dimensionality (768) and numeric integrity checks preventing corrupted vectors.
+   - Server-side usage tracking buffer (`lib/ai/usage.ts`) capturing request latencies and token counts.
+3. **Hardened RAG & Prompt-Injection Defense**:
+   - Vector retrieval scoped strictly to bot ID via Supabase `match_chunks` RPC.
+   - Cosine similarity thresholding (>= 0.35) filtering out irrelevant noise.
+   - Strict separation between system instructions (`systemInstruction`) and untrusted retrieved evidence (`<retrieved_evidence>`).
+   - Truthful fallback responses when knowledge is missing or confidence is low ("Sorry, I couldn't find that information on this website.").
+   - Safe re-indexing path (`reindexWebsiteChunks`) to upgrade existing chunks from legacy vectors to Gemini Embedding 2.
+
+---
+
+## Roadmap
+
+- **Phase 3**: Reliable multi-page crawling, background worker/queue ingestion, and sitemap processing.
+- **Phase 4**: Shadow DOM encapsulation for widget CSS isolation, tenant custom domains, and production deployment.
