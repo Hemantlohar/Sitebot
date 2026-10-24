@@ -279,8 +279,8 @@ CRITICAL SECURITY AND BEHAVIOR RULES:
     const historyText =
       history.length > 0
         ? history
-            .map((msg) => `${msg.role.toUpperCase()}: ${msg.content}`)
-            .join("\n")
+          .map((msg) => `${msg.role.toUpperCase()}: ${msg.content}`)
+          .join("\n")
         : "None";
 
     const prompt = `

@@ -8,15 +8,17 @@ export function getSupabaseClient(): SupabaseClient {
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const publishableKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !anonKey) {
+  if (!supabaseUrl || !publishableKey) {
     throw new Error(
-      "Missing Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY)."
+      "Missing Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)."
     );
   }
 
-  clientInstance = createClient(supabaseUrl, anonKey);
+  clientInstance = createClient(supabaseUrl, publishableKey);
   return clientInstance;
 }
 
@@ -26,4 +28,4 @@ export const supabase = new Proxy({} as SupabaseClient, {
     const value = Reflect.get(client, prop);
     return typeof value === "function" ? value.bind(client) : value;
   },
-});
+});

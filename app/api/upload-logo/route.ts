@@ -148,8 +148,8 @@ export async function POST(req: Request) {
       mimeType === "image/png"
         ? "png"
         : mimeType === "image/webp"
-        ? "webp"
-        : "jpg";
+          ? "webp"
+          : "jpg";
 
     const safeFileName = `${user.id}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
 

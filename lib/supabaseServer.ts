@@ -8,8 +8,9 @@ export async function createSupabaseServerClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL ||
     "https://placeholder-project.supabase.co";
   const supabaseKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    "placeholder-anon-key";
+    "placeholder-publishable-key";
 
   return createServerClient(
     supabaseUrl,
@@ -19,8 +20,8 @@ export async function createSupabaseServerClient() {
         get(name) {
           return cookieStore.get(name)?.value;
         },
-        set() {},
-        remove() {},
+        set() { },
+        remove() { },
       },
     }
   );

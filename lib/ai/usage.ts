@@ -38,10 +38,8 @@ export function trackAIUsage(record: Omit<AIUsageRecord, "timestamp">): void {
   // Safe server log without leaking sensitive user text
   if (process.env.NODE_ENV !== "test") {
     console.log(
-      `[AI Usage] op=${fullRecord.operation} model=${fullRecord.model} website=${
-        fullRecord.websiteId || "system"
-      } tokens=${fullRecord.totalTokens ?? "estimated"} duration=${
-        fullRecord.durationMs
+      `[AI Usage] op=${fullRecord.operation} model=${fullRecord.model} website=${fullRecord.websiteId || "system"
+      } tokens=${fullRecord.totalTokens ?? "estimated"} duration=${fullRecord.durationMs
       }ms success=${fullRecord.success}`
     );
   }

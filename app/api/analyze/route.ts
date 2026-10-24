@@ -275,15 +275,15 @@ export async function POST(req: Request) {
           Array.isArray(
             existingWebsite.suggested_questions
           ) &&
-          existingWebsite
-            .suggested_questions
-            .length > 0
+            existingWebsite
+              .suggested_questions
+              .length > 0
 
             ? existingWebsite
-                .suggested_questions
+              .suggested_questions
 
             : generatedCachedConfig
-                .suggestedQuestions,
+              .suggestedQuestions,
 
 
         businessName:

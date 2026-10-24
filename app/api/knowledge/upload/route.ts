@@ -207,20 +207,20 @@ export async function POST(req: Request) {
       file.type === "application/pdf" ||
       lowerName.endsWith(".pdf");
 
-   if (!isTxt && !isDocx && !isPdf) {
-  return NextResponse.json(
-    {
-      success: false,
-      error:
-        "Unsupported file type. Please upload TXT, DOCX or PDF.",
-    },
-    {
-      status: 400,
+    if (!isTxt && !isDocx && !isPdf) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Unsupported file type. Please upload TXT, DOCX or PDF.",
+        },
+        {
+          status: 400,
+        }
+      );
     }
-  );
-}
 
-    
+
 
     // ==========================================
     // 6. EXTRACT TEXT
@@ -235,21 +235,21 @@ export async function POST(req: Request) {
     let text = "";
 
     if (isPdf) {
-  text = await extractPdfText(buffer);
-}
+      text = await extractPdfText(buffer);
+    }
 
-else if (isDocx) {
-  const result =
-    await mammoth.extractRawText({
-      buffer,
-    });
+    else if (isDocx) {
+      const result =
+        await mammoth.extractRawText({
+          buffer,
+        });
 
-  text = result.value;
-}
+      text = result.value;
+    }
 
-else {
-  text = buffer.toString("utf8");
-}
+    else {
+      text = buffer.toString("utf8");
+    }
 
     // ==========================================
     // 7. CLEAN TEXT

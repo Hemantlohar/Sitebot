@@ -56,8 +56,8 @@ export function classifyGeminiError(error: unknown): GeminiError {
     typeof errObj?.status === "number"
       ? errObj.status
       : typeof errObj?.statusCode === "number"
-      ? errObj.statusCode
-      : undefined;
+        ? errObj.statusCode
+        : undefined;
 
   // Rate limiting / Quota exhausted
   if (

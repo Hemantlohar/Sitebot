@@ -259,20 +259,17 @@ export default function PlaygroundPage() {
                     return (
                       <div
                         key={`${message.role}-${index}`}
-                        className={`flex ${
-                          index > 0 ? "mt-5" : ""
-                        } ${
-                          message.role === "user"
+                        className={`flex ${index > 0 ? "mt-5" : ""
+                          } ${message.role === "user"
                             ? "justify-end"
                             : "justify-start"
-                        }`}
+                          }`}
                       >
                         <div
-                          className={`px-4 py-3 text-sm leading-relaxed shadow-sm transition-all duration-300 ${
-                            message.role === "user"
+                          className={`px-4 py-3 text-sm leading-relaxed shadow-sm transition-all duration-300 ${message.role === "user"
                               ? "max-w-[78%] text-white"
                               : "max-w-[85%]"
-                          }`}
+                            }`}
                           style={{
                             backgroundColor:
                               message.role === "user"

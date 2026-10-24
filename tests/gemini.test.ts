@@ -198,11 +198,11 @@ ${userQuestion}
     // Malicious instructions are confined inside <retrieved_evidence> tags
     assert.ok(
       formattedPrompt.indexOf(maliciousEvidence) >
-        formattedPrompt.indexOf("<retrieved_evidence>")
+      formattedPrompt.indexOf("<retrieved_evidence>")
     );
     assert.ok(
       formattedPrompt.indexOf(maliciousEvidence) <
-        formattedPrompt.indexOf("</retrieved_evidence>")
+      formattedPrompt.indexOf("</retrieved_evidence>")
     );
   });
 });

@@ -124,12 +124,12 @@ Analyze the following website content:
 ${content}
 `;
 
- const result =
-  await generateChatResponse({
-    prompt,
-    temperature: 0.1,
-    jsonMode: true,
-  });
+  const result =
+    await generateChatResponse({
+      prompt,
+      temperature: 0.1,
+      jsonMode: true,
+    });
 
   if (!result) {
     throw new Error(
@@ -145,4 +145,3 @@ ${content}
 
   return result;
 }
-
