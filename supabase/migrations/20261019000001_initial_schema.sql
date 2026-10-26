@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS public.chat_messages (
 -- ------------------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_websites_user_id ON public.websites(user_id);
 CREATE INDEX IF NOT EXISTS idx_websites_website_url ON public.websites(website_url);
+CREATE INDEX IF NOT EXISTS idx_websites_user_id_url ON public.websites(user_id, website_url);
 
 CREATE INDEX IF NOT EXISTS idx_website_chunks_website_id ON public.website_chunks(website_id);
 CREATE INDEX IF NOT EXISTS idx_website_chunks_file_name ON public.website_chunks(website_id, file_name);
@@ -79,3 +80,20 @@ CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON public.chat_messages(
 CREATE INDEX IF NOT EXISTS idx_website_chunks_embedding_hnsw
 ON public.website_chunks
 USING hnsw (embedding vector_cosine_ops);
+
+-- ------------------------------------------------------------------------------
+-- 5. Automatic updated_at Timestamp Trigger
+-- ------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.handle_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_websites_updated_at ON public.websites;
+CREATE TRIGGER trigger_websites_updated_at
+    BEFORE UPDATE ON public.websites
+    FOR EACH ROW
+    EXECUTE FUNCTION public.handle_updated_at();

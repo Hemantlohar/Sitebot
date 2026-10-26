@@ -37,3 +37,12 @@ BEGIN
     LIMIT match_count;
 END;
 $$;
+
+-- ------------------------------------------------------------------------------
+-- Function Permissions Hardening
+-- Prevent anonymous or unauthorized clients from querying chunks directly via RPC
+-- ------------------------------------------------------------------------------
+REVOKE ALL ON FUNCTION public.match_chunks(vector(768), UUID, INT) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.match_chunks(vector(768), UUID, INT) FROM anon;
+GRANT EXECUTE ON FUNCTION public.match_chunks(vector(768), UUID, INT) TO service_role;
+

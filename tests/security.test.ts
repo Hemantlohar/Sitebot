@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import { isPrivateIp, isSafeUrl } from "../lib/ssrfProtection.ts";
 
 test("SSRF Protection - isPrivateIp", async (t) => {
@@ -148,3 +150,127 @@ test("Logo Upload - Image Signature Validation", () => {
   const fakeJpeg = Buffer.from("GIF89a<script>alert(1)</script>");
   assert.strictEqual(isValidImage(fakeJpeg, "image/jpeg"), false);
 });
+
+test("Database Migrations - Multi-Tenant RLS & Storage Hardening", async (t) => {
+  const migrationsDir = path.resolve(process.cwd(), "supabase/migrations");
+
+  await t.test("003_row_level_security.sql enforces strict tenant isolation without leaks", () => {
+    const rlsSql = fs.readFileSync(
+      path.join(migrationsDir, "20261019000003_row_level_security.sql"),
+      "utf8"
+    );
+
+    // 1. Must NOT create any active-bot cross-tenant SELECT policy
+    assert.strictEqual(
+      rlsSql.includes('CREATE POLICY "Public widget can view active bot config"'),
+      false,
+      "CRITICAL: Must not contain 'Public widget can view active bot config' policy"
+    );
+
+    // 2. Must explicitly drop legacy leak policy if it was previously created
+    assert.ok(
+      rlsSql.includes('DROP POLICY IF EXISTS "Public widget can view active bot config"'),
+      "Must explicitly drop legacy 'Public widget can view active bot config' policy"
+    );
+
+    // 3. Must enforce auth.uid() = user_id on websites
+    assert.ok(
+      rlsSql.includes("auth.uid() = user_id"),
+      "Must strictly verify user ownership on websites"
+    );
+
+    // 4. Must NOT allow anonymous insertion to chat_messages
+    assert.strictEqual(
+      rlsSql.includes('CREATE POLICY "Public widget can insert chat messages for active bots"'),
+      false,
+      "Must not allow unauthenticated public inserts to chat_messages"
+    );
+
+    // 5. Must strictly enforce website owner relationship on website_chunks
+    assert.ok(
+      rlsSql.includes("public.websites.user_id = auth.uid()"),
+      "Must enforce user ownership check through website_id relationship"
+    );
+  });
+
+  await t.test("004_storage_setup.sql enforces folder-level tenant namespacing", () => {
+    const storageSql = fs.readFileSync(
+      path.join(migrationsDir, "20261019000004_storage_setup.sql"),
+      "utf8"
+    );
+
+    // Must restrict uploads and deletes to user's own folder prefix
+    assert.ok(
+      storageSql.includes("(storage.foldername(name))[1] = auth.uid()::text"),
+      "Storage policy must isolate uploads to auth.uid() folder"
+    );
+
+    // Must enforce allowed MIME types and file size limits
+    assert.ok(
+      storageSql.includes("2097152"),
+      "Must enforce 2 MB file size limit"
+    );
+    assert.ok(
+      storageSql.includes("'image/png'"),
+      "Must restrict MIME types to PNG, JPEG, WebP"
+    );
+  });
+
+  await t.test("002_vector_search_rpc.sql restricts RPC execution permissions", () => {
+    const rpcSql = fs.readFileSync(
+      path.join(migrationsDir, "20261019000002_vector_search_rpc.sql"),
+      "utf8"
+    );
+
+    // Must revoke execute from public and anon
+    assert.ok(
+      rpcSql.includes("REVOKE ALL ON FUNCTION public.match_chunks"),
+      "Must revoke match_chunks from PUBLIC"
+    );
+    assert.ok(
+      rpcSql.includes("REVOKE EXECUTE ON FUNCTION public.match_chunks(vector(768), UUID, INT) FROM anon"),
+      "Must revoke match_chunks from anon"
+    );
+
+    // Must grant execute to service_role only
+    assert.ok(
+      rpcSql.includes("GRANT EXECUTE ON FUNCTION public.match_chunks(vector(768), UUID, INT) TO service_role"),
+      "Must grant match_chunks execute only to service_role"
+    );
+
+    // Must enforce 768 dimensions
+    assert.ok(
+      rpcSql.includes("query_embedding vector(768)"),
+      "Must enforce 768-dimensional query vectors"
+    );
+  });
+});
+
+test("Storage Path Namespacing - Path Traversal Prevention", () => {
+  function generateSafeLogoPath(userId: string, filename: string): string {
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userId)) {
+      throw new Error("Invalid user ID");
+    }
+
+    // Clean filename and prevent path traversal
+    const safeBase = path.basename(filename).replace(/[^a-zA-Z0-9.-]/g, "_");
+    if (!safeBase || safeBase.startsWith(".")) {
+      throw new Error("Invalid filename");
+    }
+
+    return `${userId}/${Date.now()}-${safeBase}`;
+  }
+
+  const validUserId = "12345678-1234-1234-1234-123456789abc";
+  const safePath = generateSafeLogoPath(validUserId, "avatar.png");
+  assert.ok(safePath.startsWith(`${validUserId}/`));
+  assert.strictEqual(safePath.includes(".."), false);
+
+  // Reject invalid / traversal user IDs
+  assert.throws(() => generateSafeLogoPath("../victim", "avatar.png"), /Invalid user ID/);
+  assert.throws(() => generateSafeLogoPath("user/subfolder", "avatar.png"), /Invalid user ID/);
+  assert.throws(() => generateSafeLogoPath("", "avatar.png"), /Invalid user ID/);
+});
+
